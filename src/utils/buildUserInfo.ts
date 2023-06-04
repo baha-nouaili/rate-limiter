@@ -1,15 +1,15 @@
 import { RequestTrackerPayload } from "../interface/RequestTracker.interfaces";
 
 export const buildUserInfo = ({
-  request,
+  requestCount,
   totalRequests,
   windowSizeInSeconds,
 }: {
-  request: RequestTrackerPayload;
+  requestCount: number;
   totalRequests: number;
   windowSizeInSeconds: number;
 }) => ({
   totalRequestsAllowedPerWindowSize: totalRequests,
   windowSizeInSeconds,
-  availableRequests: totalRequests - request.requestCount,
+  availableRequests: totalRequests - requestCount,
 });

@@ -6,7 +6,7 @@ import { Request, Response, NextFunction } from "express";
 
 import {
   userIdentificationMiddleware,
-  rateLimiterMiddleware,
+  RateLimiterMiddleware,
   simpleErrorHandling,
 } from "./middleware";
 
@@ -17,12 +17,15 @@ const app = express();
 app.use(express.json());
 app.use(userIdentificationMiddleware);
 
-const rateLimiter = rateLimiterMiddleware({
+const rateLimiter = new RateLimiterMiddleware({
   maxRequestCountInWindow: 5,
   windowSize: 60,
 });
 
-app.use(rateLimiter);
+app.use(
+  async (req: Request, res: Response, next: NextFunction) =>
+    await rateLimiter.validateReq(req, res, next)
+);
 
 app.get("/ping", async (req: Request, res: Response, next: NextFunction) => {
   try {
