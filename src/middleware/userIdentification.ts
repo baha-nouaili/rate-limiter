@@ -6,7 +6,7 @@ export const userIdentificationMiddleware = (
   res: Response,
   next: NextFunction
 ) => {
-  const userId = address();
+  const userId = req.headers.me || address();
   req.body.userId = userId;
   next();
 };

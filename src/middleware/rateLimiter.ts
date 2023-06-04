@@ -6,7 +6,7 @@ import { now } from "moment";
  *
  * @param windowSize the time window which will be used by the rate limiter (this is not a fixed window size it will dynamically reset for each new request)
  * @param windowSize the windowSize take seconds as its unit.
- * @param  maxRequestCountInWindow the number of requests allowed withtin the window size range for each user (a user is defined by IP or by setting the me prop in the headers).
+ * @param maxRequestCountInWindow the number of requests allowed withtin the window size range for each user (a user is defined by IP or by setting the me prop in the headers).
  */
 
 export const rateLimiterMiddleware =

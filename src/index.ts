@@ -1,11 +1,16 @@
 import { config } from "dotenv";
 config();
+
 import * as express from "express";
-import { Request, Response } from "express";
+import { Request, Response, NextFunction } from "express";
+
 import {
   userIdentificationMiddleware,
   rateLimiterMiddleware,
+  simpleErrorHandling,
 } from "./middleware";
+
+import { connectToMongo } from "./db/connect";
 
 const app = express();
 
@@ -18,12 +23,19 @@ const rateLimiter = rateLimiterMiddleware({
 });
 app.use(rateLimiter);
 
-app.get("/ping", (req: Request, res: Response) => {
-  const userId = req.body.userId;
-  res.status(200).json({ message: `You made it ${userId}!` });
+app.get("/ping", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const userId = req.body.userId;
+    res.status(200).json({ message: `You made it ${userId}!` });
+  } catch (error) {
+    next();
+  }
 });
 
+app.use(simpleErrorHandling);
+
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
+  await connectToMongo();
   console.log(`Process running on port ${PORT}...`);
 });
