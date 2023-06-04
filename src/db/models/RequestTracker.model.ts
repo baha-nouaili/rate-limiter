@@ -20,6 +20,11 @@ export const requestTrackerSchema = new mongoose.Schema({
     type: Number,
     required: true,
   },
+  locked: {
+    type: Boolean,
+    required: true,
+    default: false,
+  },
 });
 
 // could be placed in a repo layer later

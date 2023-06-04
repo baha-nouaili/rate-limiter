@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { sleep } from "../utils/sleep";
 
 const MONGODB_URI = process.env.MONGO_URI as string;
 const MAX_RETRIES = 5;
@@ -16,7 +17,7 @@ export const connectToMongo = async (retryCount = 1) => {
       console.error(
         `Retrying connection in ${RETRY_INTERVAL}ms (Attempt ${retryCount})...`
       );
-      await new Promise((resolve) => setTimeout(resolve, RETRY_INTERVAL));
+      await sleep(RETRY_INTERVAL);
       await connectToMongo(retryCount + 1);
     } else {
       console.error(

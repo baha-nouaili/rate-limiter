@@ -3,6 +3,9 @@ import { now } from "moment";
 
 import { RequestTracker as requestTrackerModel } from "../db/models/RequestTracker.model";
 import { buildUserInfo } from "../utils/buildUserInfo";
+import { sleep } from "../utils/sleep";
+
+const RETRY_INTERVAL = 2000;
 
 export class RateLimiterMiddleware {
   private windowSizeInMs: number;
@@ -28,7 +31,7 @@ export class RateLimiterMiddleware {
 
   public async validateReq(req: Request, res: Response, next: NextFunction) {
     const userId = req.body.userId;
-    const currentRequest = await requestTrackerModel.findByUserId(userId);
+    let currentRequest = await requestTrackerModel.findByUserId(userId);
 
     if (!currentRequest) {
       const request = await this.registerANewClient(userId);
@@ -43,6 +46,15 @@ export class RateLimiterMiddleware {
       return next();
     }
 
+    // checking if the request is locked? if so we should wait till it will unlock
+    while (currentRequest.locked) {
+      await sleep(RETRY_INTERVAL);
+      currentRequest = await requestTrackerModel.findByUserId(userId);
+    }
+
+    //locking the req before processing to prevent race conditions
+    await this.lockTheUserRequest(userId);
+
     const diff = now() - currentRequest.lastActivity;
 
     if (
@@ -54,7 +66,10 @@ export class RateLimiterMiddleware {
         userId,
       });
 
-      if (!updatedRequest) {
+      // once the processing is done we could release the request to be consumed by other processes (reqs)
+      const request = await this.unLockTheUserRequest(userId);
+
+      if (!updatedRequest || !request) {
         return next({});
       }
 
@@ -68,7 +83,9 @@ export class RateLimiterMiddleware {
         requestCount: 1,
       });
 
-      if (!updatedRequest) {
+      const request = await this.unLockTheUserRequest(userId);
+
+      if (!updatedRequest || !request) {
         return next({});
       }
 
@@ -77,6 +94,7 @@ export class RateLimiterMiddleware {
 
       return next();
     } else {
+      await this.unLockTheUserRequest(userId);
       return res.status(429).json({ message: "Too Many Requests" });
     }
   }
@@ -96,9 +114,26 @@ export class RateLimiterMiddleware {
     userId: string;
     requestCount: number;
   }) {
+    // only getting the locked requests since we should operate only on locked requests in this phase , else an error should be thrown without affecting the current request
     return await requestTrackerModel.findOneAndUpdate(
-      { userId },
+      { userId, locked: true },
       { lastActivity: now(), requestCount },
+      { new: true }
+    );
+  }
+
+  private async lockTheUserRequest(userId: string) {
+    return await requestTrackerModel.findOneAndUpdate(
+      { userId, locked: false },
+      { locked: true },
+      { new: true }
+    );
+  }
+
+  private async unLockTheUserRequest(userId: string) {
+    return await requestTrackerModel.findOneAndUpdate(
+      { userId, locked: true },
+      { locked: false },
       { new: true }
     );
   }
