@@ -29,6 +29,10 @@ requestTrackerSchema.statics.insertOne = function (
   return this.create(payload);
 };
 
+requestTrackerSchema.statics.findByUserId = function (userId: string) {
+  return this.findOne({ userId });
+};
+
 const RequestTracker = mongoose.model<
   RequestTrackerDocument,
   RequestTrackerModel

@@ -14,4 +14,5 @@ export interface RequestTrackerDocument extends Document {
 
 export interface RequestTrackerModel extends Model<RequestTrackerDocument> {
   insertOne(payload: RequestTrackerPayload): Promise<RequestTrackerDocument>;
+  findByUserId(userId: string): Promise<RequestTrackerDocument>;
 }

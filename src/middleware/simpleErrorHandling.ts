@@ -1,6 +1,7 @@
 import { NextFunction, Request, Response } from "express";
 
 export const simpleErrorHandling = (
+  error: any,
   req: Request,
   res: Response,
   next: NextFunction
